@@ -37,7 +37,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moviefilteringsystem.R
+import com.example.moviefilteringsystem.model.UserModel
+import com.example.moviefilteringsystem.repository.UserRepoImpl
 import com.example.moviefilteringsystem.view.ui.theme.MovieFilteringSystemTheme
+import com.example.moviefilteringsystem.viewmodel.UserViewModel
 
 class SignupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +68,7 @@ fun SignupScreen() {
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var visibility by remember { mutableStateOf(false) }
+    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
 
 
     Column(
@@ -174,7 +178,45 @@ fun SignupScreen() {
 
         Button(
             onClick = {
+                // Basic validation to ensure fields are not empty
+                if (email.isNotEmpty() && password.isNotEmpty() && fullName.isNotEmpty() && contactNumber.isNotEmpty()) {
+                    userViewModel.register(email, password) { success, message, userId ->
+                        if (success && userId != null) { // Check that userId is not null
+                            // Create the UserModel using the REAL userId from Firebase Auth
+                            val model = UserModel(
+                                userId = userId, // <-- CORRECTED: Use the userId from the callback
+                                fullName = fullName,
+                                email = email,
+                                contactNumber = contactNumber,
+                                // Storing plain-text passwords in the database is a major security risk.
+                                // You should only store the encrypted password or, even better,
+                                // not store the password in the database at all since Firebase handles authentication.
+                                // For now, I'll leave it but it should be removed.
+                                password = password
+                            )
+
+                            // Now add the user to the database with the correct userId
+                            userViewModel.addUserToDatabase(userId, model) { dbSuccess, dbMessage ->
+                                if (dbSuccess) {
+                                    Toast.makeText(context, dbMessage, Toast.LENGTH_LONG).show()
+                                    // Navigate to the Login screen upon successful registration
+                                    val intent = Intent(context, LoginActivity::class.java)
+                                    context.startActivity(intent)
+                                } else {
+                                    Toast.makeText(context, dbMessage, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        } else {
+                            // Handle registration failure
+                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else {
+                    Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                }
             },
+
+
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),

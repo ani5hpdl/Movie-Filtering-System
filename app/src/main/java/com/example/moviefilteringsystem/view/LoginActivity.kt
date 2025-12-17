@@ -3,6 +3,7 @@ package com.example.moviefilteringsystem.view
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
@@ -57,10 +58,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.moviefilteringsystem.MainActivity
 import com.example.moviefilteringsystem.R
+import com.example.moviefilteringsystem.repository.UserRepoImpl
 import com.example.moviefilteringsystem.view.ui.theme.MovieFilteringSystemTheme
 import com.example.moviefilteringsystem.view.ui.theme.Purple40
 import com.example.moviefilteringsystem.view.ui.theme.PurpleGrey80
+import com.example.moviefilteringsystem.viewmodel.UserViewModel
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,11 +80,14 @@ class LoginActivity : ComponentActivity() {
 fun LoginScreen() {
 
     val context = LocalContext.current
-//    val activity = context as Activity
+    val activity = context as Activity
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var visibility by remember { mutableStateOf(false) }
+
+    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
+
 
     Scaffold() { padding ->
         Column(
@@ -213,7 +220,29 @@ fun LoginScreen() {
 
                 Button(
                     onClick = {
+                        userViewModel.login(email,password){
+                                success,message->
+                            if (success){
+                                Toast.makeText(context,
+                                    message,
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                val intent = Intent(
+                                    context,
+                                    MainActivity::class.java
+                                )
 
+                                context.startActivity(intent)
+
+                                activity.finish()
+
+                            }else{
+                                Toast.makeText(context,
+                                    message,
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
