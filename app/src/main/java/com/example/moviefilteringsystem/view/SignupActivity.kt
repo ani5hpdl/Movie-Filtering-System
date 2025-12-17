@@ -178,28 +178,20 @@ fun SignupScreen() {
 
         Button(
             onClick = {
-                // Basic validation to ensure fields are not empty
                 if (email.isNotEmpty() && password.isNotEmpty() && fullName.isNotEmpty() && contactNumber.isNotEmpty()) {
                     userViewModel.register(email, password) { success, message, userId ->
-                        if (success && userId != null) { // Check that userId is not null
-                            // Create the UserModel using the REAL userId from Firebase Auth
+                        if (success && userId != null) {
                             val model = UserModel(
-                                userId = userId, // <-- CORRECTED: Use the userId from the callback
+                                userId = userId,
                                 fullName = fullName,
                                 email = email,
                                 contactNumber = contactNumber,
-                                // Storing plain-text passwords in the database is a major security risk.
-                                // You should only store the encrypted password or, even better,
-                                // not store the password in the database at all since Firebase handles authentication.
-                                // For now, I'll leave it but it should be removed.
                                 password = password
                             )
 
-                            // Now add the user to the database with the correct userId
                             userViewModel.addUserToDatabase(userId, model) { dbSuccess, dbMessage ->
                                 if (dbSuccess) {
                                     Toast.makeText(context, dbMessage, Toast.LENGTH_LONG).show()
-                                    // Navigate to the Login screen upon successful registration
                                     val intent = Intent(context, LoginActivity::class.java)
                                     context.startActivity(intent)
                                 } else {
@@ -207,7 +199,6 @@ fun SignupScreen() {
                                 }
                             }
                         } else {
-                            // Handle registration failure
                             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                         }
                     }

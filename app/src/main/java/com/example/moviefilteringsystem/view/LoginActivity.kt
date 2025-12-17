@@ -211,7 +211,13 @@ fun LoginScreen() {
                     "Forget Password?",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(end = 17.dp),
+                        .padding(end = 17.dp)
+                        .clickable(
+                            onClick = {
+                                val intent = Intent(context, ForgotPasswordActivity::class.java)
+                                context.startActivity(intent)
+                            }
+                        ),
                     style = TextStyle(
                         color = Color.White,
                         textAlign = TextAlign.End
