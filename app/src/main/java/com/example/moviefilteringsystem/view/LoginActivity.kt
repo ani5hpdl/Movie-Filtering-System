@@ -133,6 +133,9 @@ fun LoginScreen() {
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email
                     ),
+                    label = {
+                        Text("Email")
+                    },
                     placeholder = {
                         Text("abc@gmail.com",
                             style = TextStyle(
@@ -163,6 +166,9 @@ fun LoginScreen() {
                     value = password,
                     onValueChange = { data ->
                         password = data
+                    },
+                    label = {
+                        Text("Password")
                     },
                     placeholder = {
                         Text("*********",

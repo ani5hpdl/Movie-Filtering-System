@@ -85,7 +85,7 @@ fun ForgotPasswordScreen() {
                 value = email,
                 onValueChange = { email = it },
                 modifier = Modifier.fillMaxWidth(),
-//                label = { Text("Email") },
+                label = { Text("Email") },
                 placeholder = { Text("Enter your registered email") },
                 leadingIcon = {
                     Icon(Icons.Default.Email, contentDescription = "Email Icon")
