@@ -241,7 +241,7 @@ fun LoginScreen() {
                                 ).show()
                                 val intent = Intent(
                                     context,
-                                    MainActivity::class.java
+                                    DashboardActivity::class.java
                                 )
 
                                 context.startActivity(intent)

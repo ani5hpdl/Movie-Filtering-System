@@ -9,21 +9,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -37,10 +38,13 @@ class DashboardActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            DashboardScreen()
+            MovieFilteringSystemTheme {
+                DashboardScreen()
+            }
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen() {
@@ -49,49 +53,55 @@ fun DashboardScreen() {
 
     var selectedIndex by remember { mutableStateOf(0) }
 
-    var listNav = listOf(
-        NavItem(label = "Home",
-            icon = R.drawable.baseline_home_24),
-        NavItem(label = "Discover",
-            icon = R.drawable.compass),
-        NavItem(label = "Libary",
-            icon = R.drawable.baseline_book_24),
-        NavItem(label = "Setting",
-            icon = R.drawable.baseline_settings_24)
+    val listNav = listOf(
+        NavItem(label = "Home", icon = R.drawable.baseline_home_24),
+        NavItem(label = "Discover", icon = R.drawable.compass),
+        NavItem(label = "Library", icon = R.drawable.baseline_book_24),
+        NavItem(label = "Setting", icon = R.drawable.baseline_settings_24)
     )
 
     Scaffold(
-        topBar ={
+        containerColor = Color.Black,
+        topBar = {
             CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                ),
                 title = {
                     Text(text = "Dashboard")
                 },
                 navigationIcon = {
-                    IconButton(onClick = {  }) {
+                    IconButton(onClick = { /*TODO*/ }) {
                         Icon(
                             painter = painterResource(id = R.drawable.baseline_menu_24),
-                            contentDescription = null
+                            contentDescription = "Menu"
                         )
                     }
                 },
                 actions = {
-                    IconButton(onClick = {  }) {
+                    IconButton(onClick = { /*TODO*/ }) {
                         Icon(
                             painter = painterResource(id = R.drawable.baseline_search_24),
-                            contentDescription = null
+                            contentDescription = "Search"
                         )
                     }
                 }
             )
         },
         bottomBar = {
-            NavigationBar() {
+            NavigationBar(
+                containerColor = Color.Transparent,
+                contentColor = Color.White
+            ) {
                 listNav.forEachIndexed { index, item ->
                     NavigationBarItem(
                         icon = {
                             Icon(
                                 painter = painterResource(item.icon),
-                                contentDescription = null,
+                                contentDescription = item.label,
                                 modifier = Modifier.size(24.dp)
                             )
                         },
@@ -101,30 +111,76 @@ fun DashboardScreen() {
                         onClick = {
                             selectedIndex = index
                         },
-                        selected = selectedIndex == index
+                        selected = selectedIndex == index,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFFFFD700),
+                            unselectedIconColor = Color.Gray,
+                            selectedTextColor = Color(0xFFFFD700),
+                            unselectedTextColor = Color.Gray,
+                            indicatorColor = Color.Transparent
+                        )
                     )
                 }
             }
         }
-    ) {padding->
+    ) { padding ->
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(padding)
-                .background(Color.Black)
         ) {
-//            when(selectedIndex){
-//                0-> HomeScreen()
-//                1-> DiscoverScreen()
-//                2-> LibaryScreen()
-//                3-> SettingScreen()
-//                else -> HomeScreen()
-//            }
+            when (selectedIndex) {
+                0 -> HomeScreen()
+                1 -> DiscoverScreen()
+                2 -> LibraryScreen()
+                3 -> SettingScreen()
+                else -> HomeScreen()
+            }
         }
     }
 }
 
-@Preview
 @Composable
-fun DashboardPreview(){
-    DashboardScreen()
+fun DiscoverScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Discover Screen", color = Color.White)
+    }
+}
+
+@Composable
+fun LibraryScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Library Screen", color = Color.White)
+    }
+}
+
+@Composable
+fun SettingScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Setting Screen", color = Color.White)
+    }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun DashboardPreview() {
+    MovieFilteringSystemTheme {
+        DashboardScreen()
+    }
 }
