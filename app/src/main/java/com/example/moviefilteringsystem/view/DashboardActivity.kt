@@ -130,11 +130,11 @@ fun DashboardScreen() {
                 .padding(padding)
         ) {
             when (selectedIndex) {
-                0 -> HomeScreen()
+                0 -> DiscoverScreen()
                 1 -> DiscoverScreen()
                 2 -> LibraryScreen()
                 3 -> SettingScreen()
-                else -> HomeScreen()
+                else -> DiscoverScreen()
             }
         }
     }
