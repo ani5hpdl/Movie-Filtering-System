@@ -1,21 +1,14 @@
 package com.example.moviefilteringsystem.model
 
 data class UserModel(
-    var userId : String,
-    var fullName: String,
-    var email: String,
-    var contactNumber: String,
-    var password: String
-){
-    fun toMap(): Map<String, Any>
-    {
-        return mapOf(
-            "userId" to userId,
-            "fullName" to fullName,
-            "email" to email,
-            "contactNumber" to contactNumber,
-            "password" to password
-        )
-
-    }
-}
+    var id: String = "",
+    val name: String = "",
+    val email: String = "",
+    val contactNumber: String = "",
+    val password: String = "",
+    val profileImageUrl: String = "",
+    val subtitle: String = "The Movie Critic",
+    val favoriteGenres: List<String> = emptyList(),
+    val questionnaireResults: Map<String, String> = emptyMap(),
+    val isQuestionnaireCompleted: Boolean = false
+)
