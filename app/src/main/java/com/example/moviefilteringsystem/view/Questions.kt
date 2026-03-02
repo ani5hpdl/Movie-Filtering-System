@@ -2,6 +2,7 @@ package com.example.moviefilteringsystem.view
 
 import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,8 +22,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,11 +34,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,34 +55,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.moviefilteringsystem.model.UserModel
+import com.example.moviefilteringsystem.repository.UserRepoImpl
 import com.example.moviefilteringsystem.view.ui.theme.MovieFilteringSystemTheme
-
-class Questions : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            MovieFilteringSystemTheme {
-                QuestionsScreen()
-            }
-        }
-    }
-}
+import com.example.moviefilteringsystem.viewmodel.UserViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun QuestionsScreen() {
+fun QuestionsScreen(onComplete: () -> Unit) {
     var showProfileQuestionnaire by remember { mutableStateOf(false) }
+    var selectedGenres by remember { mutableStateOf(setOf<String>()) }
 
     if (showProfileQuestionnaire) {
-        ProfileQuestionnaireScreen()
+        ProfileQuestionnaireScreen(
+            selectedGenres = selectedGenres.toList(),
+            onComplete = onComplete
+        )
     } else {
-        GenreSelectionScreen { showProfileQuestionnaire = true }
+        GenreSelectionScreen(
+            onGenresSelected = { genres ->
+                selectedGenres = genres
+                showProfileQuestionnaire = true
+            }
+        )
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun GenreSelectionScreen(onContinueClicked: () -> Unit) {
+fun GenreSelectionScreen(onGenresSelected: (Set<String>) -> Unit) {
     val genres = listOf(
         "Action", "Comedy", "Romance", "Horror", "Mystery", "Thriller",
         "Sci-Fi", "Superhero", "Drama", "Musical", "Fantasy", "Crime",
@@ -85,7 +91,6 @@ fun GenreSelectionScreen(onContinueClicked: () -> Unit) {
     )
 
     var selectedGenres by remember { mutableStateOf(setOf<String>()) }
-    val context = LocalContext.current
     val isButtonEnabled = selectedGenres.isNotEmpty()
 
     Column(
@@ -141,14 +146,7 @@ fun GenreSelectionScreen(onContinueClicked: () -> Unit) {
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = {
-                val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                with(sharedPreferences.edit()) {
-                    putStringSet("favorite_genres", selectedGenres)
-                    apply()
-                }
-                onContinueClicked()
-            },
+            onClick = { onGenresSelected(selectedGenres) },
             enabled = isButtonEnabled,
             modifier = Modifier
                 .fillMaxWidth()
@@ -171,11 +169,15 @@ fun GenreSelectionScreen(onContinueClicked: () -> Unit) {
 }
 
 @Composable
-fun ProfileQuestionnaireScreen() {
+fun ProfileQuestionnaireScreen(selectedGenres: List<String>, onComplete: () -> Unit) {
     var q1Selection by remember { mutableStateOf<String?>(null) }
     var q2Selection by remember { mutableStateOf<String?>(null) }
     var q3Selection by remember { mutableStateOf<String?>(null) }
+    var isSaving by remember { mutableStateOf(false) }
+    
     val context = LocalContext.current
+    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
+    val auth = FirebaseAuth.getInstance()
 
     val questions = listOf(
         "1. How do you experience movies" to listOf("I enjoy watching and sharing opinions!", "I analyze and review movies in depth!"),
@@ -223,29 +225,60 @@ fun ProfileQuestionnaireScreen() {
                 )
             }
 
-            Spacer(modifier = Modifier.height(80.dp)) // Spacer for the button
+            Spacer(modifier = Modifier.height(80.dp))
         }
 
-        IconButton(
-            onClick = {
-                val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                with(sharedPreferences.edit()) {
-                    q1Selection?.let { putString("profile_q1", it) }
-                    q2Selection?.let { putString("profile_q2", it) }
-                    q3Selection?.let { putString("profile_q3", it) }
-                    apply()
-                }
-                // TODO: Navigate to the main part of the app
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowForward,
-                contentDescription = "Next",
-                tint = Color.White
-            )
+        if (isSaving) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFFFD700))
+            }
+        } else {
+            IconButton(
+                onClick = {
+                    if (q1Selection != null && q2Selection != null && q3Selection != null) {
+                        isSaving = true
+                        val userId = auth.currentUser?.uid
+                        if (userId != null) {
+                            userViewModel.getUser(userId) { user ->
+                                if (user != null) {
+                                    val updatedUser = user.copy(
+                                        favoriteGenres = selectedGenres,
+                                        questionnaireResults = mapOf(
+                                            "q1" to q1Selection!!,
+                                            "q2" to q2Selection!!,
+                                            "q3" to q3Selection!!
+                                        ),
+                                        isQuestionnaireCompleted = true
+                                    )
+                                    userViewModel.updateUser(updatedUser) { success, message ->
+                                        isSaving = false
+                                        if (success) {
+                                            onComplete()
+                                        } else {
+                                            Toast.makeText(context, message ?: "Failed to save", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                } else {
+                                    isSaving = false
+                                    Toast.makeText(context, "User not found", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    } else {
+                        Toast.makeText(context, "Please answer all questions", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .background(Color(0xFFFFD700), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Finish",
+                    tint = Color.Black
+                )
+            }
         }
     }
 }
@@ -288,7 +321,6 @@ fun QuestionItem(
         }
     }
 }
-
 
 @Composable
 fun GenreChip(
