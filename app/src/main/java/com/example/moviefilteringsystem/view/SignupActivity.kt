@@ -1,5 +1,6 @@
 package com.example.moviefilteringsystem.view
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -8,7 +9,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,16 +18,16 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
-//import androidx.compose.material.icons.filled.Visibility
-//import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -48,264 +48,190 @@ class SignupActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MovieFilteringSystemTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = Color.Black
-                ) {
-                    SignupScreen()
-                }
+                SignupScreenContent()
             }
         }
     }
 }
 
 @Composable
-fun SignupScreen() {
+fun SignupScreenContent() {
     val context = LocalContext.current
+    val activity = context as Activity
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var contactNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
     var visibility by remember { mutableStateOf(false) }
     val userViewModel = remember { UserViewModel(UserRepoImpl()) }
 
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color.Black
     ) {
-        // --- App Logo ---
-        Image(
-            painter = painterResource(R.drawable.smartflixlogo),
-            contentDescription = "App Logo",
-            modifier = Modifier.size(120.dp)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // --- Header Text ---
-        Text(
-            text = "Create Your Account",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Join the movie-loving community",
-            fontSize = 16.sp,
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // --- Full Name Text Field ---
-        OutlinedTextField(
-            value = fullName,
-            onValueChange = { fullName = it },
-            modifier = Modifier.fillMaxWidth(),
-            label={Text("Full Name")},
-            placeholder = { Text("Enter your Full Name") },
-            leadingIcon = { Icon(Icons.Default.AccountCircle, "Full Name Icon") },
-            colors = customTextFieldColors(),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Email Text Field ---
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            modifier = Modifier.fillMaxWidth(),
-            label={Text("Email")},
-            placeholder = { Text("Enter your Email") },
-            leadingIcon = { Icon(Icons.Default.Email, "Email Icon") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            singleLine = true,
-            colors = customTextFieldColors(),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Contact Number Text Field ---
-        OutlinedTextField(
-            value = contactNumber,
-            onValueChange = { contactNumber = it },
-            modifier = Modifier.fillMaxWidth(),
-            label={Text("Contact Number")},
-            placeholder = { Text("Enter your Contact Number") },
-            leadingIcon = { Icon(Icons.Default.Phone, "Contact Number Icon") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            colors = customTextFieldColors(),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = {Text("Password")},
-            placeholder = { Text("Enter your Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, "Password Icon") },
-            trailingIcon = {
-                IconButton(onClick = {
-                    visibility = !visibility
-                }) {
-                    Icon(
-                        painter = if (visibility)
-                            painterResource(R.drawable.baseline_visibility_24)
-                        else
-                            painterResource(R.drawable.baseline_visibility_off_24),
-
-                        contentDescription = null
-                    )
-                }
-            },
-            visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            colors = customTextFieldColors(),
-            shape = RoundedCornerShape(12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = {
-                if (email.isNotEmpty() && password.isNotEmpty() && fullName.isNotEmpty() && contactNumber.isNotEmpty()) {
-                    userViewModel.register(email, password) { success, message, userId ->
-                        if (success && userId != null) {
-                            val model = UserModel(
-                                userId = userId,
-                                fullName = fullName,
-                                email = email,
-                                contactNumber = contactNumber,
-                                password = password
-                            )
-
-                            userViewModel.addUserToDatabase(userId, model) { dbSuccess, dbMessage ->
-                                if (dbSuccess) {
-                                    Toast.makeText(context, dbMessage, Toast.LENGTH_LONG).show()
-                                    val intent = Intent(context, LoginActivity::class.java)
-                                    context.startActivity(intent)
-                                } else {
-                                    Toast.makeText(context, dbMessage, Toast.LENGTH_LONG).show()
-                                }
-                            }
-                        } else {
-                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                        }
-                    }
-                } else {
-                    Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
-                }
-            },
-
-
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Sign Up", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Divider(modifier = Modifier.weight(1f), color = Color.Gray)
-            Text(
-                "Or sign up with",
-                color = Color.Gray,
-                modifier = Modifier.padding(horizontal = 8.dp)
+            Image(
+                painter = painterResource(R.drawable.smartflixlogo),
+                contentDescription = "App Logo",
+                modifier = Modifier.size(100.dp),
+                contentScale = ContentScale.Fit
             )
-            Divider(modifier = Modifier.weight(1f), color = Color.Gray)
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            SocialLoginButton(iconId = R.drawable.gmail, text = "Google") {  }
-            Spacer(modifier = Modifier.width(16.dp))
-            SocialLoginButton(iconId = R.drawable.facebbook, text = "Facebook") {  }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // --- Login Prompt ---
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Already have an account?", color = Color.Gray)
-            Spacer(modifier = Modifier.width(4.dp))
             Text(
-                "Log In",
-                modifier = Modifier.clickable {
-                    Toast.makeText(context, "Navigate to Log In", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(context, LoginActivity::class.java)
-                    context.startActivity(intent)
+                text = "Join SmartFlix",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+            Text(
+                text = "Discover your next favorite movie",
+                style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // Full Name Field
+            OutlinedTextField(
+                value = fullName,
+                onValueChange = { fullName = it },
+                modifier = Modifier.fillMaxWidth().testTag("fullName"),
+                label = { Text("Full Name") },
+                leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+                colors = outlinedTextFieldColors(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Email Field
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                modifier = Modifier.fillMaxWidth().testTag("email"),
+                label = { Text("Email Address") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                colors = outlinedTextFieldColors(),
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Contact Field
+            OutlinedTextField(
+                value = contactNumber,
+                onValueChange = { contactNumber = it },
+                modifier = Modifier.fillMaxWidth().testTag("contactNumber"),
+                label = { Text("Phone Number") },
+                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                colors = outlinedTextFieldColors(),
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Password Field
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                modifier = Modifier.fillMaxWidth().testTag("password"),
+                label = { Text("Password") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { visibility = !visibility }) {
+                        Icon(
+                            imageVector = if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = null
+                        )
+                    }
                 },
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
+                visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                colors = outlinedTextFieldColors(),
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                singleLine = true
             )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Sign Up Button
+            Button(
+                onClick = {
+                    if (email.isNotEmpty() && password.isNotEmpty() && fullName.isNotEmpty() && contactNumber.isNotEmpty()) {
+                        val userModel = UserModel(
+                            name = fullName,
+                            email = email,
+                            contactNumber = contactNumber,
+                            password = password
+                        )
+                        userViewModel.createUser(userModel) { success, message ->
+                            if (success) {
+                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                val intent = Intent(context, LoginActivity::class.java)
+                                context.startActivity(intent)
+                                activity.finish()
+                            } else {
+                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .testTag("signupButton"),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFD700),
+                    contentColor = Color.Black
+                )
+            ) {
+                Text(
+                    "Create Account",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Login Link
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Already a member?", color = Color.Gray)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Sign In",
+                    modifier = Modifier.clickable {
+                        val intent = Intent(context, LoginActivity::class.java)
+                        context.startActivity(intent)
+                        activity.finish()
+                    }.testTag("loginLink"),
+                    color = Color(0xFFFFD700),
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
-
-@Composable
-fun SocialLoginButton(
-    iconId: Int,
-    text: String,
-    onClick: () -> Unit
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.height(50.dp),
-        shape = RoundedCornerShape(12.dp),
-        border = ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp)
-    ) {
-        Image(
-            painter = painterResource(id = iconId),
-            contentDescription = "$text logo",
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text, color = Color.White)
-    }
-}
-
-@Composable
-fun customTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = Color.Gray,
-    focusedLabelColor = MaterialTheme.colorScheme.primary,
-    unfocusedLabelColor = Color.Gray,
-    cursorColor = MaterialTheme.colorScheme.primary,
-    focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
-    unfocusedLeadingIconColor = Color.Gray,
-    focusedTextColor = Color.White,
-    unfocusedTextColor = Color.White
-)
 
 @Preview
 @Composable
 fun SignupPreview() {
     MovieFilteringSystemTheme {
-        SignupScreen()
+        SignupScreenContent()
     }
 }
