@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.BrokenImage
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -26,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -33,7 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.rememberAsyncImagePainter
+import coil3.compose.AsyncImage
 import com.example.moviefilteringsystem.model.MovieModel
 import com.example.moviefilteringsystem.model.UserModel
 import com.example.moviefilteringsystem.repository.MovieRepoImpl
@@ -44,6 +46,10 @@ import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun HomeScreen(isAdmin: Boolean = false, onMovieClick: (MovieModel) -> Unit) {
+    // TEMPORARY: Call this to upload mock data with real posters.
+    // REMOVE THIS LINE after running the app once.
+//    UploadMockData()
+
     val movieViewModel = remember { MovieViewModel(MovieRepoImpl()) }
     val userViewModel = remember { UserViewModel(UserRepoImpl()) }
     val auth = FirebaseAuth.getInstance()
@@ -78,6 +84,11 @@ fun HomeScreen(isAdmin: Boolean = false, onMovieClick: (MovieModel) -> Unit) {
                 favorites.any { fav -> movie.genre.contains(fav, ignoreCase = true) }
             }
         }
+    }
+
+    // Group movies by genre for dynamic rows
+    val moviesByGenre = remember(movies) {
+        movies.groupBy { it.genre }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
@@ -174,6 +185,16 @@ fun HomeScreen(isAdmin: Boolean = false, onMovieClick: (MovieModel) -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+
+                // Dynamic Genre Rows
+                moviesByGenre.forEach { (genre, genreMovies) ->
+                    if (genre.isNotEmpty()) {
+                        MovieSection(title = "Popular in $genre", movies = genreMovies, onMovieClick = onMovieClick)
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
+
+                // Just Released (Always at bottom)
                 MovieSection(title = "Just Released", movies = movies.reversed(), onMovieClick = onMovieClick)
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -207,8 +228,8 @@ fun TrendingHero(movie: MovieModel, onMovieClick: (MovieModel) -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box {
-            Image(
-                painter = rememberAsyncImagePainter(movie.imageUrl),
+            AsyncImage(
+                model = movie.imageUrl,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -282,13 +303,16 @@ fun MovieCardItem(movie: MovieModel, onMovieClick: (MovieModel) -> Unit) {
                 .height(200.dp)
                 .fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.DarkGray)
         ) {
-            Image(
-                painter = rememberAsyncImagePainter(movie.imageUrl),
-                contentDescription = null,
+            AsyncImage(
+                model = movie.imageUrl,
+                contentDescription = movie.title,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                error = rememberVectorPainter(Icons.Default.BrokenImage),
+                placeholder = rememberVectorPainter(Icons.Default.Movie)
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
