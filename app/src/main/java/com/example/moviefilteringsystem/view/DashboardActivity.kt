@@ -60,7 +60,16 @@ fun MainContainer(isAdminFromLogin: Boolean) {
     var isQuestionnaireCompleted by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(Unit) {
-        val userId = auth.currentUser?.uid
+        val currentUser = auth.currentUser
+        val userId = currentUser?.uid
+        val email = currentUser?.email
+        
+        // Skip questionnaire for admin
+        if (email == "test@email.com") {
+            isQuestionnaireCompleted = true
+            return@LaunchedEffect
+        }
+
         if (userId != null) {
             userViewModel.getUser(userId) { user ->
                 isQuestionnaireCompleted = user?.isQuestionnaireCompleted ?: false
@@ -74,7 +83,7 @@ fun MainContainer(isAdminFromLogin: Boolean) {
         Box(modifier = Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = Color(0xFFFFD700))
         }
-    } else if (!isQuestionnaireCompleted!!) {
+    } else if (!isQuestionnaireCompleted!! && !isAdminFromLogin) {
         QuestionsScreen(onComplete = { isQuestionnaireCompleted = true })
     } else {
         DashboardScreen(isAdminFromLogin)
