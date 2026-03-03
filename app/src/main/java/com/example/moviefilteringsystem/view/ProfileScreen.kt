@@ -1,5 +1,7 @@
 package com.example.moviefilteringsystem.view
 
+import android.app.Activity
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -54,9 +57,11 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun ProfileScreen() {
     val userViewModel = remember { UserViewModel(UserRepoImpl()) }
-    val movieViewModel = remember { MovieViewModel(MovieRepoImpl()) } // Reusing for Cloudinary upload
+    val movieViewModel = remember { MovieViewModel(MovieRepoImpl()) }
     val context = LocalContext.current
-    val currentUser = FirebaseAuth.getInstance().currentUser
+    val activity = context as Activity
+    val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
     var user by remember { mutableStateOf<UserModel?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
@@ -82,7 +87,17 @@ fun ProfileScreen() {
             user?.let {
                 ProfileHeader(it) { showEditDialog = true }
                 Spacer(modifier = Modifier.height(24.dp))
-                ProfileMenuList()
+                ProfileMenuList(onLogout = {
+                    auth.signOut()
+                    // Clear remember me prefs
+                    val sharedPref = context.getSharedPreferences("LoginPrefs", android.content.Context.MODE_PRIVATE)
+                    sharedPref.edit().clear().apply()
+                    
+                    val intent = Intent(context, LoginActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    context.startActivity(intent)
+                    activity.finish()
+                })
             }
         }
     }
@@ -187,7 +202,7 @@ fun ProfileHeader(user: UserModel, onEditClick: () -> Unit) {
 }
 
 @Composable
-fun ProfileMenuList() {
+fun ProfileMenuList(onLogout: () -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
         Text(
             text = "My Activity",
@@ -216,29 +231,50 @@ fun ProfileMenuList() {
         ProfileMenuItem(Icons.Default.Videocam, "Video Quality")
         ProfileMenuItem(Icons.Default.Theaters, "Watch Preference")
         ProfileMenuItem(Icons.Default.Settings, "Settings")
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color.DarkGray, thickness = 0.5.dp)
+
+        Text(
+            text = "Account",
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+        ProfileMenuItem(
+            icon = Icons.AutoMirrored.Filled.Logout,
+            text = "Log Out",
+            textColor = Color.Red,
+            onClick = onLogout
+        )
     }
 }
 
 @Composable
-fun ProfileMenuItem(icon: ImageVector, text: String) {
+fun ProfileMenuItem(
+    icon: ImageVector,
+    text: String,
+    textColor: Color = Color.White,
+    onClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable { }
+            .clickable { onClick() }
             .padding(vertical = 14.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color(0xFFFFD700),
+            tint = if (textColor == Color.Red) Color.Red else Color(0xFFFFD700),
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = text,
-            color = Color.White,
+            color = textColor,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f)
